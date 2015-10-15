@@ -1,0 +1,108 @@
+localat
+******* 
+a semi-threadsafe posix socket wrapper, transparently adding support for local sockets 
+relative to an arbitrary directory file-descriptor, in the vein of the ___at() family 
+of filesystem functions introduced in posix 2008.
+
+
+introduction
+************ 
+the openat(), mkdirat(), mkfifoat(), linkat(), symlinkat(), unlinkat(), etc functions
+introduced in posix 2008 are really handy.  but the ____at() function for creating
+local sockets relative to an opened directory is suspiciously absent, leaving one to
+roll one's own if its needed (tmux, at least, does this).
+
+for instructions on how to build and install localat, type
+ $ make help
+or
+ $ make
+
+to build, type
+ $ make all
+
+to test, type
+ $ make test
+
+to install, type
+ $ sudo make install
+(and then run ldconfig, or do whatever is required on your system)
+
+
+documentation
+*************
+liblocalat provides 1 #defined constant, 1 struct, and 3 functions, that mirror the 
+standard posix socket api.
+
+the functions are:
+
+ socket2(int domain, int type, int protocol);
+
+which works just like posix's socket(), except it also accepts AF_LOCALAT or AF_UNIXAT 
+as domains.
+
+ bind2(int socket, void* sockaddr, socklen_t length);
+
+which works just like posix's bind(), except it also accepts struct sockaddr_unat* 
+arguments.  and uses a void* so one doesn't need to explicitly cast.
+
+ connect2(int socket, void* sockaddr, socklen_t length);
+
+which works just like posix's connect(), except it also accepts struct sockaddr_unat* 
+arguments.  and uses a void* so one doesn't need to explicitly cast.  
+
+the structures and constants are:
+
+ #define AF_LOCALAT
+ #define AF_UNIXAT
+
+ struct sockaddr_unat
+ {
+   sa_family_t sunat_family;
+   int dirfd;
+   char path[108];
+ };
+
+where @dirfd should be set to the fd of an open directory that @path[] will be treated
+as being relative to.  like the other posix ____at() functions, if the path is absolute
+(ie starts with a / character) then dirfd will be ignored, and if dirfd is set to the 
+constant AT_FDWCD, the path will be treated as being relative to the process's current 
+working directory.
+
+all any of these functions do is check if the family is AF_LOCALAT or AF_UNIXAT, and
+delegate to the standard posix functions if it is not.  so they are fine to *try* to 
+use as global replacements for socket,connect,bind if you so wish.
+
+
+examples
+********
+see the source of test.c for examples of using socket2,connect2,bind2 for creating
+local and localat sockets.
+
+
+threadsafety
+************ 
+liblocalat is partially threadsafe: the functions can be called simultaneously from
+multiple threads without error, but if a background thread forks and execs some file
+descriptors will leak.  this is an unavoidable consequence of the close-on-exec flag
+being an "opt-in" state-- rather than the default state-- of newly created, duplicated,
+or received fds under posix.  linux provides some non-posix flags to avoid this, but 
+i'm not sure if the BSDs (or OSX) do the same.
+
+the whole point of the ____at() functions is to provide threadsafe filesystem access
+functions, so this whole 'not being fully threadsafe thing' is a bit unfortunate.
+
+
+portability
+***********
+should work on any posix system, with the exception of cygwin, which does not support
+passing file-descriptors over local sockets.  it might be possible to avoid this by
+transfering the socket via the /proc filesystem.  i haven't looked into it yet.
+
+the makefile *probably* doesn't work on OSX.
+
+
+future work
+***********
+support for struct sockaddr_unat should be provided by the kernel in posix systems,
+so this lib should really be just a way of demo-ing the interface.
+
