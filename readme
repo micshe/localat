@@ -53,13 +53,14 @@ the structures and constants are:
    char path[108];
  };
 
-where @dirfd should be set to the fd of an open directory that @path[] will be treated as being relative to.  like the other posix ____at() functions, if the path is absolute (ie starts with a / character) then dirfd will be ignored, and if dirfd is set to the constant AT_FDWCD, the path will be treated as being relative to the process's current working directory.
+where dirfd should be set to the fd of an open directory that path[] will be treated as being relative to.  like the other posix ____at() functions, if the path is absolute (ie starts with a / character) then dirfd will be ignored, and if dirfd is set to the constant AT_FDWCD, the path will be treated as being relative to the process's current working directory.
 
-all any of these functions do is check if the family is AF_LOCALAT or AF_UNIXAT, and delegate to the standard posix functions if it is not.  so they are fine to *try* to use as global replacements for socket,connect,bind if you so wish.  
+all any of these functions do is check if the family is AF_LOCALAT or AF_UNIXAT, and delegate to the standard posix functions if it is not.  so they are fine to *try* to use as global replacements for socket,connect,bind if you so wish.
+
 
 examples
 ********
-see the source of test.c for examples of using socket2,connect2,bind2 for creating local and localat sockets.
+see the source of test.c for examples of using socket2, connect2, bind2 for creating local and localat sockets.
 
 
 threadsafety
