@@ -2,14 +2,11 @@ localat
 ******* 
 a semi-threadsafe posix socket wrapper, transparently adding support for local sockets relative to an arbitrary directory file-descriptor, in the vein of the ___at() family of filesystem functions introduced in posix 2008.
 
-
-introduction
-************ 
-the openat(), mkdirat(), mkfifoat(), linkat(), symlinkat(), unlinkat(), etc functions introduced in posix 2008 are really handy.  but the ____at() function for creating local sockets relative to an opened directory is suspiciously absent, leaving one to roll one's own if its needed (tmux, at least, does this).
+the openat(), mkdirat(), mkfifoat(), linkat(), symlinkat(), unlinkat(), etc functions introduced in posix 2008 are really handy.  but the ____at() function for creating local sockets relative to an opened directory is suspiciously absent, leaving one to roll one's own if it's needed (tmux, at least, does this).  this is one i've used whenever i've needed such functionality that forks off a subprocess to do the socket-work.
 
 for instructions on how to build and install localat, type
  $ make help
-or
+or just
  $ make
 
 to build, type
@@ -49,11 +46,11 @@ the structures and constants are:
  struct sockaddr_unat
  {
    sa_family_t sunat_family;
-   int dirfd;
-   char path[108];
+   int sunat_dirfd;
+   char sunat_path[108];
  };
 
-where dirfd should be set to the fd of an open directory that path[] will be treated as being relative to.  like the other posix ____at() functions, if the path is absolute (ie starts with a / character) then dirfd will be ignored, and if dirfd is set to the constant AT_FDWCD, the path will be treated as being relative to the process's current working directory.
+where sunat_dirfd should be set to the fd of an open directory that sunat_path[] will be treated as being relative to.  like the other posix ____at() functions, if the path is absolute (ie starts with a / character) then the dirfd will be ignored, and if the dirfd is set to the constant AT_FDWCD, the path will be treated as being relative to the process's current working directory.
 
 all any of these functions do is check if the family is AF_LOCALAT or AF_UNIXAT, and delegate to the standard posix functions if it is not.  so they are fine to *try* to use as global replacements for socket,connect,bind if you so wish.
 
@@ -75,6 +72,8 @@ portability
 liblocalat should work on any posix system, with the exception of cygwin, which does not support passing file-descriptors over local sockets.  it might be possible to avoid this by transfering the socket via the /proc filesystem.  i haven't looked at it yet.
 
 the makefile probably doesn't work on OSX.
+
+developed and tested on linux 3.13 (32bit).
 
 
 future work
