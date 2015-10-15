@@ -470,7 +470,7 @@ int connect2(int socket, void*sockaddr, socklen_t addrlen)
 	sock.sun_family = AF_LOCAL;
 	strcpy(sock.sun_path,addr->sunat_path);
 
-	if(addr->sunat_fd == AT_FDCWD || addr->sunat_path[0]=='/')
+	if(addr->sunat_fd == AT_FDCWD || addr->sunat_path[0]=='/' || addr->sunat_path[0]=='\0')
 		return connect(socket,(struct sockaddr*)&sock, sizeof(struct sockaddr_un));
 
 	return connectat(addr->sunat_fd, socket, (struct sockaddr*)&sock, sizeof(struct sockaddr_un));
@@ -488,7 +488,7 @@ int bind2(int socket, void*sockaddr, socklen_t addrlen)
 	sock.sun_family = AF_LOCAL;
 	strcpy(sock.sun_path,addr->sunat_path);
 
-	if(addr->sunat_fd == AT_FDCWD || addr->sunat_path[0]=='/')
+	if(addr->sunat_fd == AT_FDCWD || addr->sunat_path[0]=='/' || addr->sunat_path[0]=='\0')
 		return bind(socket,(struct sockaddr*)&sock, sizeof(struct sockaddr_un));
 
 	return bindat(addr->sunat_fd, socket, (struct sockaddr*)&sock, sizeof(struct sockaddr_un));
