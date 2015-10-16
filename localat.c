@@ -4,7 +4,7 @@
 #include<unistd.h>			/* for close() fstat() fork() */
 #include<sys/wait.h>			/* for waitpid() */
 #include<fcntl.h>			/* for fcntl() AT_FDCWD */
-#include<stdlib.h>			/* for _exit() */
+#include<stdlib.h>			/* for _exit() rand() */
 #include<string.h>			/* for strcpy()) */
 #include<limits.h>			/* for LONG_MAX */
 #include<errno.h>
@@ -425,7 +425,7 @@ long localat_family(void)
 {
 	if(unique!=-1)
 		return unique;
-
+#if 0
 	long i;
 	for(i=0;i<LONG_MAX;++i)
 		if(i!=AF_LOCAL && i!=AF_UNIX && i!=AF_INET && i!=AF_INET6 &&
@@ -437,8 +437,71 @@ long localat_family(void)
 		   i!=AF_APPLETALK &&
 		   i!=AF_PACKET)
 			return unique = i;
-
 	return -1;
+#else
+	/*
+	this approach should have a better chance of
+	working if localat is used ontop of another
+	library that provides extra families using the 
+	same mechanism as localat, and has them linked or
+	#defined to overload the socket() function.
+
+	instead of picking the first number that isn't 
+	any of the known families, we pick a number that 
+	doesn't give an error with whichever socket 
+	function we wind up using.
+
+	of course, this approach will break if localat
+	is compiled ontop of another library that provides
+	extra types, since we're only checking the known
+	types.  so be warned.
+	*/
+
+	int err;
+	short i;
+
+retry:
+		i = rand() % SHRT_MAX;
+
+		err = socket(i,SOCK_STREAM,0);
+		if(err!=-1)
+		{
+			close(err);
+			goto retry;
+		}
+
+		err = socket(i,SOCK_DGRAM,0);
+		if(err!=-1)
+		{
+			close(err);
+			goto retry;
+		}
+#ifdef SOCK_SEQPACKET
+		/* linux only, apparantly */
+		err = socket(i,SOCK_SEQPACKET,0);
+		if(err!=-1)
+		{
+			close(err);
+			goto retry;
+		}
+#endif
+		err = socket(i,SOCK_RAW,0);
+		if(err!=-1)
+		{
+			close(err);
+			goto retry;
+		}
+
+		err = socket(i,SOCK_RDM,0);
+		if(err!=-1)
+		{
+			close(err);
+			goto retry;
+		}
+
+	unique = i;
+	return unique;
+#endif 
 } 
 #define AF_UNIXAT localat_family()
 #define AF_LOCALAT localat_family()
