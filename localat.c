@@ -423,22 +423,6 @@ it should and will be improved later.
 static long unique = -1; 
 long localat_family(void)
 {
-	if(unique!=-1)
-		return unique;
-#if 0
-	long i;
-	for(i=0;i<LONG_MAX;++i)
-		if(i!=AF_LOCAL && i!=AF_UNIX && i!=AF_INET && i!=AF_INET6 &&
-		   i!=AF_IPX && 
-		   i!=AF_NETLINK &&
-		   i!=AF_X25 &&
-		   i!=AF_AX25 &&
-		   i!=AF_ATMPVC &&
-		   i!=AF_APPLETALK &&
-		   i!=AF_PACKET)
-			return unique = i;
-	return -1;
-#else
 	/*
 	this approach should have a better chance of
 	working if localat is used ontop of another
@@ -447,9 +431,13 @@ long localat_family(void)
 	#defined to overload the socket() function.
 
 	instead of picking the first number that isn't 
-	any of the known families, we pick a number that 
-	doesn't give an error with whichever socket 
-	function we wind up using.
+	any of the known families, we pick the first 
+	number that does gives an error with whichever 
+	socket function we wind up using.  this means
+	that we'll never accidentally clobber any 
+	overloaded socket function's new families, and
+	any two threads that wind up calling localat_family()
+	will return the same value.
 
 	of course, this approach will break if localat
 	is compiled ontop of another library that provides
@@ -460,44 +448,62 @@ long localat_family(void)
 	int err;
 	short i;
 
+	i = -1;
 retry:
-		i = rand() % SHRT_MAX;
+	++i;
 
-		err = socket(i,SOCK_STREAM,0);
-		if(err!=-1)
-		{
-			close(err);
-			goto retry;
-		}
+	if(unique!=-1)
+		return unique;
 
-		err = socket(i,SOCK_DGRAM,0);
-		if(err!=-1)
-		{
-			close(err);
-			goto retry;
-		}
-#ifdef SOCK_SEQPACKET
-		/* linux only, apparantly */
-		err = socket(i,SOCK_SEQPACKET,0);
-		if(err!=-1)
-		{
-			close(err);
-			goto retry;
-		}
+	err = socket(i,SOCK_STREAM,0);
+	if(err!=-1)
+	{
+		close(err);
+		goto retry;
+	}
+
+	if(unique!=-1)
+		return unique;
+
+	err = socket(i,SOCK_DGRAM,0);
+	if(err!=-1)
+	{
+		close(err);
+		goto retry;
+	}
+
+#ifdef SOCK_SEQPACKET 
+	/* linux only, apparantly */
+	if(unique!=-1)
+		return unique;
+
+	err = socket(i,SOCK_SEQPACKET,0);
+	if(err!=-1)
+	{
+		close(err);
+		goto retry;
+	}
 #endif
-		err = socket(i,SOCK_RAW,0);
-		if(err!=-1)
-		{
-			close(err);
-			goto retry;
-		}
 
-		err = socket(i,SOCK_RDM,0);
-		if(err!=-1)
-		{
-			close(err);
-			goto retry;
-		}
+	if(unique!=-1)
+		return unique;
+
+	err = socket(i,SOCK_RAW,0);
+	if(err!=-1)
+	{
+		close(err);
+		goto retry;
+	}
+
+	if(unique!=-1)
+		return unique;
+
+	err = socket(i,SOCK_RDM,0);
+	if(err!=-1)
+	{
+		close(err);
+		goto retry;
+	}
 
 	unique = i;
 	return unique;
