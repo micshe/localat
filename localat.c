@@ -4,7 +4,7 @@
 #include<unistd.h>			/* for close() fstat() fork() */
 #include<sys/wait.h>			/* for waitpid() */
 #include<fcntl.h>			/* for fcntl() AT_FDCWD */
-#include<stdlib.h>			/* for _exit() rand() */
+#include<stdlib.h>			/* for _exit() */
 #include<string.h>			/* for strcpy()) */
 #include<limits.h>			/* for LONG_MAX */
 #include<errno.h>
