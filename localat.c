@@ -507,7 +507,6 @@ retry:
 
 	unique = i;
 	return unique;
-#endif 
 } 
 #define AF_UNIXAT localat_family()
 #define AF_LOCALAT localat_family()
